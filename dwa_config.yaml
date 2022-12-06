@@ -1,5 +1,5 @@
 # scene
-scene: empty
+scene: stadium
 scene_id: Rs_int
 build_graph: true
 load_texture: true
@@ -38,10 +38,10 @@ robot:
     camera:
       name: JointController
       use_delta_commands: False
+  proprio_obs: [robot_pos, dd_base_lin_vel, dd_base_ang_vel]
       
 human:
   name: BehaviorRobot
-
   # For the VR use case, we use the higher set of joint speed/position limits, and a different gripper action space.
   show_visual_head: False
   higher_limits: True
@@ -75,7 +75,7 @@ initial_pos_z_offset: 0.1
 collision_ignore_link_a_ids: [0, 1, 2]  # ignore collisions with these robot links
 
 # sensor spec
-output: []
+output: [scan, occupancy_grid, proprioception]
 # image
 # Primesense Carmine 1.09 short-range RGBD sensor
 # http://xtionprolive.com/primesense-carmine-1.09
@@ -90,13 +90,12 @@ depth_high: 3.0
 # SICK TIM571 scanning range finder
 # https://docs.fetchrobotics.com/robot_hardware.html
 # n_horizontal_rays is originally 661, sub-sampled 1/3
-
-# n_horizontal_rays: 220
-# n_vertical_beams: 1
-# laser_linear_range: 25.0
-# laser_angular_range: 220.0
-# min_laser_dist: 0.05
-# laser_link_name: laser_link
+n_horizontal_rays: 220
+n_vertical_beams: 1
+laser_linear_range: 25.0
+laser_angular_range: 220.0
+min_laser_dist: 0.05
+laser_link_name: laser_link
 
 # sensor noise
 depth_noise_rate: 0.0
