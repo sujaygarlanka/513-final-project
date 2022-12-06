@@ -33,6 +33,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from defender import Defenders
+from dwa import DWA
 
 
 def main():
@@ -49,13 +50,13 @@ def main():
     env.set_pos_orn_with_z_offset(robot, [robot_x, robot_y, 0], [0, 0, 0])
     
     # Instantiate mid fielders
-    mid_fielders = Defenders(env, (0, 10), (-5, 5), 5)
+    mid_fielders = Defenders(env, (0, 10), (-5, 5), 0)
     # Instantiate defenders and goalie
-    
+    defenders = Defenders(env, (15, 20), (-5, 5), 4)
     # Instantiate objects
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     objects = [
-        ("soccerball.urdf", (20.000000, 0.0, 0.000000), (0.000000, 0.000000, 0.707107, 0.707107)),
+        ("soccerball.urdf", (12.000000, 0.0, 0.000000), (0.000000, 0.000000, 0.707107, 0.707107)),
     ]
     for item in objects:
         fpath = item[0]
@@ -65,20 +66,20 @@ def main():
         env.simulator.import_object(item_ob)
         item_ob.set_position(pos)
         item_ob.set_orientation(orn)
+
     ############################################# Running program ############################################
-    # action map for Fetch robot
-    # 0 - forward/back
-    # 1 - rotation
-    action_to_take = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    waypoints = [(12, 0), (22, 0), (22, 5)]
+    curr_destination = 0
+    state = env.get_state()
+    dwa_planner = DWA(env)
     while(True):
         # actionStep = env.simulator.gen_vr_robot_action()
         # human.apply_action(actionStep)
 
         mid_fielders.step()
-        action = env.action_space.sample()
-        state, reward, done, _ = env.step(action_to_take)
-        propio = state['proprioception']
-
+        defenders.step()
+        action = dwa_planner.get_next_action(state, waypoints[curr_destination])
+        state, _, _, _ = env.step(action)
         # data = state['occupancy_grid']
         # # data = env.scene.floor_map[0]
         # data = np.array(data)
@@ -90,8 +91,12 @@ def main():
         # fig = plt.figure()
         # ax = fig.add_subplot(1,1,1, projection='3d')
         # ax.plot_surface(x, y, data)
-        # plt.show()
-        if done:
+        # plt.show()s
+        x = state['proprioception'][0]
+        y = state['proprioception'][1]
+        print(state['proprioception'][4])
+        # print(state['proprioception'][4])
+        if x > waypoints[0][0] - 0.5 and x < waypoints[0][0] + 0.5 and y > waypoints[0][1] - 0.5 and y < waypoints[0][1] + 0.5:
             break
         # break
 
