@@ -50,7 +50,7 @@ def main():
     env.set_pos_orn_with_z_offset(robot, [robot_x, robot_y, 0], [0, 0, 0])
     
     # Instantiate mid fielders
-    mid_fielders = Defenders(env, (0, 10), (-5, 5), 0)
+    mid_fielders = Defenders(env, (0, 10), (-5, 5), 5)
     # Instantiate defenders and goalie
     defenders = Defenders(env, (15, 20), (-5, 5), 0)
     # Instantiate objects
@@ -78,8 +78,8 @@ def main():
 
         mid_fielders.step()
         defenders.step()
-        action = dwa_planner.get_next_action(state, waypoints[curr_destination])
-        state, _, _, _ = env.step(action)
+        dwa_planner.step(state, waypoints[curr_destination])
+        state, _, _, _ = env.step(None)
         # data = state['occupancy_grid']
         # # data = env.scene.floor_map[0]
         # data = np.array(data)
@@ -91,34 +91,16 @@ def main():
         # fig = plt.figure()
         # ax = fig.add_subplot(1,1,1, projection='3d')
         # ax.plot_surface(x, y, data)
-        # plt.show()s
+        # plt.show()
         x = state['proprioception'][0]
         y = state['proprioception'][1]
-        print(state['proprioception'][3])
-        print(state['proprioception'][4])
+        # print(state['proprioception'][3])
+        # print(state['proprioception'][4])
         if x > waypoints[0][0] - 0.5 and x < waypoints[0][0] + 0.5 and y > waypoints[0][1] - 0.5 and y < waypoints[0][1] + 0.5:
             break
         break
 
 if __name__ == "__main__":
-    # main()
-    # 17.4 max rotational velocity
-    lin = 0.2
-    ang = 0.1
-    wheel_radius = 0.0613
-    wheel_axle_halflength = 0.372 / 2
-    max_lin_vel = 1.06662
-    max_ang_vel = 5.73451613
-    lin_vel = lin * max_lin_vel
-    ang_vel = ang * max_ang_vel
-    right_wheel_joint_vel = (lin_vel - ang_vel * wheel_axle_halflength) / wheel_radius
-    left_wheel_joint_vel = (lin_vel + ang_vel * wheel_axle_halflength) / wheel_radius
-    circle_radius = wheel_axle_halflength * (left_wheel_joint_vel + right_wheel_joint_vel) / (left_wheel_joint_vel - right_wheel_joint_vel)
-    print(lin_vel)
-    print(ang_vel)
-    print(left_wheel_joint_vel)
-    print(right_wheel_joint_vel)
-    print(2 * circle_radius)
-
+    main()
 
 

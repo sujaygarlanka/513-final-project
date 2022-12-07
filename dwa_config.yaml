@@ -38,7 +38,7 @@ robot:
     camera:
       name: JointController
       use_delta_commands: False
-  proprio_obs: [robot_pos, dd_base_lin_vel, dd_base_ang_vel]
+  proprio_obs: [robot_pos, base_qvel]
 
 # robot:
 #   name: Turtlebot
