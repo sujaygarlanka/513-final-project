@@ -98,11 +98,9 @@ class DifferentialDriveController(LocomotionController):
             to the [left, right] wheel joints
         """
         lin_vel, ang_vel = command
-
         # Convert to wheel velocities
         left_wheel_joint_vel = (lin_vel - ang_vel * self.wheel_axle_halflength) / self.wheel_radius
         right_wheel_joint_vel = (lin_vel + ang_vel * self.wheel_axle_halflength) / self.wheel_radius
-
         # Return desired velocities
         return np.array([left_wheel_joint_vel, right_wheel_joint_vel])
 
