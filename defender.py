@@ -19,7 +19,7 @@ class Defenders():
     # 5 - yaw
 
     def __init__(self, env, x_range, y_range, num_defenders):
-        self.DEFAULT_SPEED = 0.1
+        self.DEFAULT_SPEED = 0.03
         self.env = env
         self.x_range = x_range
         self.y_range = y_range
@@ -38,6 +38,8 @@ class Defenders():
             self.env.simulator.import_object(defender)
             rand_x = random.randrange(self.x_range[0], self.x_range[1])
             rand_y = random.randrange(self.y_range[0], self.y_range[1])
+            # rand_x = 6
+            # rand_y = 0
             self.env.set_pos_orn_with_z_offset(defender, [rand_x, rand_y, 0])
             self.actions[i][0] = self.DEFAULT_SPEED
 

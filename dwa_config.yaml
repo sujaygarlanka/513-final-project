@@ -25,16 +25,16 @@ robot:
   rigid_trunk: false
   default_trunk_offset: 0.365
   default_arm_pose: vertical
+  grasping_mode: sticky
   controller_config:
     base:
       name: DifferentialDriveController
-    arm:
+    arm_0:
       name: InverseKinematicsController
       kv: 2.0
-    gripper_right_hand:
-      name: JointController
-    gripper_left_hand:
-      name: JointController
+    gripper_0:
+      name: MultiFingerGripperController
+      mode: binary
     camera:
       name: JointController
       use_delta_commands: False
