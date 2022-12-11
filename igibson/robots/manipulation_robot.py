@@ -86,7 +86,7 @@ class ManipulationRobot(BaseRobot):
                 values specified, but setting these individual kwargs will override them
     """
 
-    def __init__(self, grasping_mode="physical", self_collision=True, **kwargs):
+    def __init__(self, grasping_mode="sticky", self_collision=True, **kwargs):
         """
         :param grasping_mode: None or str, One of {"physical", "assisted", "sticky"}.
             If "physical", no assistive grasping will be applied (relies on contact friction + finger force).

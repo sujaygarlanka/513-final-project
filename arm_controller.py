@@ -93,11 +93,8 @@ class ArmController():
                 "No configuration to reach that point. Move the marker to a different configuration and try again."
             )
 
-    def release(self):
-        pass
-    
-    def grab(self):
-        self.fetch_robot.apply_action([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+    def untuck(self):
+        self.fetch_robot.untuck()
 
     def accurate_calculate_inverse_kinematics(self, robot_id, eef_link_id, target_pos, threshold, max_iter):
         max_limits = get_max_limits(robot_id, self.all_joint_ids)

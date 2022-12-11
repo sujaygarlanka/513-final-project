@@ -52,6 +52,12 @@ def main():
     robot = env.robots[0]
     robot_x, robot_y = 0, 0
     env.set_pos_orn_with_z_offset(robot, [robot_x, robot_y, 0], [0, 0, 0])
+
+    # config = parse_config("dwa_config.yaml")
+    # human = BehaviorRobot(**config["human"])
+    # env.simulator.import_object(human)
+    # env.simulator.switch_main_vr_robot(human)
+    # env.set_pos_orn_with_z_offset(human, [3, -3, 0], [0, 0, 0])
     
     # Instantiate mid fielders
     mid_fielders = Defenders(env, (2, 10), (-2, 2), 5)
@@ -60,11 +66,12 @@ def main():
     # Instantiate objects
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     soccer_x = 12
-    # soccer_y = random.randrange(-10, 10)
-    soccer_y = 0
+    soccer_y = random.randrange(-10, 10)
+    # soccer_y = 0
     objects = [
-        ("soccerball.urdf", (soccer_x, soccer_y, 1.000000), (0.000000, 0.000000, 0.707107, 0.707107), 0.5),
+        ("soccerball.urdf", (soccer_x, soccer_y, 1.000000), (0.000000, 0.000000, 0.707107, 0.707107), 0.3),
     ]
+    scene_objects = []
     for item in objects:
         fpath = item[0]
         pos = item[1]
@@ -74,8 +81,9 @@ def main():
         env.simulator.import_object(item_ob)
         item_ob.set_position(pos)
         item_ob.set_orientation(orn)
+        scene_objects.append(item_ob)
     ############################################# Running program ############################################
-    waypoints = [(soccer_x, soccer_y), (22, 0)]
+    waypoints = [(soccer_x, soccer_y), (22, 0), (0, 0)]
     curr_destination = 0
     state = env.get_state()
     dwa_planner = DWA(env)
@@ -87,17 +95,20 @@ def main():
         mid_fielders.step()
         defenders.step()
         dwa_planner.step(state, waypoints[curr_destination])
+        if curr_destination == 1:
+            pos = robot.get_eef_position(arm="default")
+            pos[2] = pos[2] - 0.18
+            scene_objects[0].set_position(pos)
         state, _, _, _ = env.step(None)
         
         x = state['proprioception'][0]
         y = state['proprioception'][1]
 
-        if x > waypoints[curr_destination][0] - 0.6 and x < waypoints[curr_destination][0] + 0.6 and y > waypoints[curr_destination][1] - 0.6 and y < waypoints[curr_destination][1] + 0.6:
+        if x > waypoints[curr_destination][0] - 0.4 and x < waypoints[curr_destination][0] + 0.4 and y > waypoints[curr_destination][1] - 0.4 and y < waypoints[curr_destination][1] + 0.4:
             if curr_destination == 0:
-                arm_controller.move_to_location([soccer_x, soccer_y, 0])
-                arm_controller.grab()
-                time.sleep(5)
-                arm_controller.move_to_location([soccer_x, soccer_y, 1])
+                arm_controller.move_to_location([waypoints[0][0], waypoints[0][1], 0.3])
+                time.sleep(2)
+                arm_controller.untuck()
             curr_destination += 1
         if curr_destination == len(waypoints):
             break

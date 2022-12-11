@@ -2,6 +2,8 @@ from igibson.utils.utils import quatToXYZW, parse_config
 from transforms3d.euler import euler2quat
 from igibson.robots.behavior_robot import BehaviorRobot
 from igibson.robots.fetch import Fetch
+from igibson.robots.turtlebot import Turtlebot
+from igibson.robots.jr2 import JR2
 
 import numpy as np
 import random
@@ -24,16 +26,16 @@ class Defenders():
         self.x_range = x_range
         self.y_range = y_range
         self.num_defenders = num_defenders
-        self.config = parse_config("dwa_config.yaml")
         self.defenders = []
         self.num_steps_counter = 0
         self.num_steps_update = 100
-        self.actions = np.zeros((num_defenders,28))
+        self.actions = np.zeros((num_defenders, 28))
         self.init()
     
     def init(self):
         for i in range(self.num_defenders):
-            defender = BehaviorRobot(normal_color=False)
+            defender = BehaviorRobot(normal_color=False, use_tracked_body=False)
+            # defender = JR2()
             self.defenders.append(defender)
             self.env.simulator.import_object(defender)
             rand_x = random.randrange(self.x_range[0], self.x_range[1])

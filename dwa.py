@@ -43,6 +43,8 @@ class DWA():
         self.dt = self.env.action_timestep
         self.num_dt_to_predict = 70
         self.robot = env.robots[0]
+        # set the robot gripper as closed (-1) or open (1).
+        self.gripper = 1
 
         # theta  = random.uniform(-0.8 * math.pi, 0.8 * math.pi)
         # rotation = quatToXYZW(euler2quat(0, 0, theta), "wxyz")
@@ -66,19 +68,31 @@ class DWA():
         action = np.zeros((11,))
         action[0] = action_l
         action[1] = action_a
+        action[10] = self.gripper
         self.robot.apply_action(action)
 
-    def test_ori(self, x, y, destination):
-        qx, qy, qz, qw = self.robot.get_orientation()
-        _, _, theta = quat2euler(qx, qy, qz, qw)
-        print(theta)
-        x_dist = destination[0] - x
-        y_dist = destination[1] - y
-        optimal_heading =  np.arctan2(y_dist, x_dist)
-        print(optimal_heading)
-        if optimal_heading < 0:
-            optimal_heading = 2 * math.pi + optimal_heading
-        print(optimal_heading)
+    def grab(self):
+        self.gripper = -1
+        action = np.zeros((11,))
+        action[10] = self.gripper
+        self.robot.apply_action(action)
+        for i in range(10):
+            self.env.step(None)
+    
+    def release(self):
+        self.gripper = 1
+
+    # def test_ori(self, x, y, destination):
+    #     qx, qy, qz, qw = self.robot.get_orientation()
+    #     _, _, theta = quat2euler(qx, qy, qz, qw)
+    #     print(theta)
+    #     x_dist = destination[0] - x
+    #     y_dist = destination[1] - y
+    #     optimal_heading =  np.arctan2(y_dist, x_dist)
+    #     print(optimal_heading)
+    #     if optimal_heading < 0:
+    #         optimal_heading = 2 * math.pi + optimal_heading
+    #     print(optimal_heading)
 
     def get_dynamic_window_velocities(self, vl, vr):
         # Velocities that are limited by acceleration and min/max velocities
@@ -99,15 +113,18 @@ class DWA():
         selected_heading = None
         best_theta_predict = None
         best_benefit = -1000000
-        HEADING_WEIGHT = 15
+        HEADING_WEIGHT = 5
         OBSTACLE_WEIGHT = 90
-        VELOCITY_WEIGHT = 30
+        VELOCITY_WEIGHT = 50
 
         for vl in vls:
             for vr in vrs:
-                x_predict, y_predict, theta_predict = self.predict_position(x, y, theta, vl, vr)
+                positions = self.predict_positions(x, y, theta, vl, vr)
+                x_predict = positions[-1][0]
+                y_predict = positions[-1][1]
+                theta_predict = positions[-1][2]
                 heading_metric = self.heading_metric(theta_predict, x, y, destination)
-                obstacle_clearance_distance = self.obstacle_clearance_metric(x_predict, y_predict)
+                obstacle_clearance_distance = self.obstacle_clearance_metric(positions)
                 velocity_metric = self.velocity_metric(x_predict, y_predict, destination)
                 benefit = HEADING_WEIGHT * heading_metric  +  OBSTACLE_WEIGHT * obstacle_clearance_distance + VELOCITY_WEIGHT * velocity_metric
                 # print(str(vl) + "-" + str(vr) + " : " + str(benefit) +  "|" +  str(degrees(theta_predict)))
@@ -123,25 +140,48 @@ class DWA():
         return selected_vl, selected_vr
 
 
-    def predict_position(self, x, y, theta, vl, vr):
+    # def predict_position(self, x, y, theta, vl, vr):
+    #     vl = vl * self.WHEEL_RADIUS
+    #     vr = vr * self.WHEEL_RADIUS
+    #     t = self.dt * self.num_dt_to_predict
+    #     x_predict = None
+    #     y_predict = None
+    #     theta_predict = None
+    #     if (round(vl, 3) == round(vr, 3)):
+    #         x_predict = x + vl * t * math.cos(theta)
+    #         y_predict = y + vl * t * math.sin(theta)
+    #         theta_predict = theta
+    #     else:
+    #         R = self.WHEEL_AXLE_LENGTH / 2.0 * (vr + vl) / (vr - vl)
+    #         delta_theta = (vr - vl) * t / self.WHEEL_AXLE_LENGTH
+    #         # Need to review this
+    #         x_predict = x + R * (math.sin(delta_theta + theta) - math.sin(theta))
+    #         y_predict = y - R * (math.cos(delta_theta + theta) - math.cos(theta))
+    #         theta_predict = theta + delta_theta
+    #     return x_predict, y_predict, theta_predict
+
+    def predict_positions(self, x, y, theta, vl, vr):
         vl = vl * self.WHEEL_RADIUS
         vr = vr * self.WHEEL_RADIUS
-        t = self.dt * self.num_dt_to_predict
-        x_predict = None
-        y_predict = None
-        theta_predict = None
-        if (round(vl, 3) == round(vr, 3)):
-            x_predict = x + vl * t * math.cos(theta)
-            y_predict = y + vl * t * math.sin(theta)
-            theta_predict = theta
-        else:
-            R = self.WHEEL_AXLE_LENGTH / 2.0 * (vr + vl) / (vr - vl)
-            delta_theta = (vr - vl) * t / self.WHEEL_AXLE_LENGTH
-            # Need to review this
-            x_predict = x + R * (math.sin(delta_theta + theta) - math.sin(theta))
-            y_predict = y - R * (math.cos(delta_theta + theta) - math.cos(theta))
-            theta_predict = theta + delta_theta
-        return x_predict, y_predict, theta_predict
+        positions = []
+        for step in range(self.num_dt_to_predict):
+            x_predict = None
+            y_predict = None
+            theta_predict = None
+            t = self.dt * step
+            if (round(vl, 3) == round(vr, 3)):
+                x_predict = x + vl * t * math.cos(theta)
+                y_predict = y + vl * t * math.sin(theta)
+                theta_predict = theta
+            else:
+                R = self.WHEEL_AXLE_LENGTH / 2.0 * (vr + vl) / (vr - vl)
+                delta_theta = (vr - vl) * t / self.WHEEL_AXLE_LENGTH
+                # Need to review this
+                x_predict = x + R * (math.sin(delta_theta + theta) - math.sin(theta))
+                y_predict = y - R * (math.cos(delta_theta + theta) - math.cos(theta))
+                theta_predict = theta + delta_theta
+            positions.append((x_predict, y_predict, theta_predict))
+        return positions
 
     def heading_metric(self, theta_predict, x, y, destination):
         x_dist = destination[0] - x
@@ -157,14 +197,28 @@ class DWA():
         # print("####")
         return -1 * min(theta_1, theta_2)
 
-    def obstacle_clearance_metric(self, x, y):
+    # def obstacle_clearance_metric(self, x, y):
+    #     SAFE_DIST = 1.8
+    #     closest_distance = 100000
+    #     for robot in self.env.robots[1:]:
+    #         x_robot, y_robot, z_robot = robot.get_position()
+    #         distance =  math.dist([x,y], [x_robot, y_robot])
+    #         if distance < closest_distance:
+    #             closest_distance = distance
+    #     metric = SAFE_DIST - closest_distance
+    #     if metric < 0:
+    #         return 0.0
+    #     return -1 * metric
+
+    def obstacle_clearance_metric(self, positions):
         SAFE_DIST = 1.8
         closest_distance = 100000
-        for robot in self.env.robots[1:]:
-            x_robot, y_robot, z_robot = robot.get_position()
-            distance =  math.dist([x,y], [x_robot, y_robot])
-            if distance < closest_distance:
-                closest_distance = distance
+        for pos_predict in positions:
+            for robot in self.env.robots[1:]:
+                x_robot, y_robot, z_robot = robot.get_position()
+                distance =  math.dist([pos_predict[0], pos_predict[1]], [x_robot, y_robot])
+                if distance < closest_distance:
+                    closest_distance = distance
         metric = SAFE_DIST - closest_distance
         if metric < 0:
             return 0.0
