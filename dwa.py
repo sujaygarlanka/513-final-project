@@ -41,14 +41,8 @@ class DWA():
         self.MAX_ACCELERATION = 400
         self.env = env
         self.dt = self.env.action_timestep
-        self.num_dt_to_predict = 70
+        self.num_dt_to_predict = 90
         self.robot = env.robots[0]
-        # set the robot gripper as closed (-1) or open (1).
-        self.gripper = 1
-
-        # theta  = random.uniform(-0.8 * math.pi, 0.8 * math.pi)
-        # rotation = quatToXYZW(euler2quat(0, 0, theta), "wxyz")
-        # self.robot.set_orientation(rotation)
 
     # action map for Fetch robot - 11 controls
     # 0 - forward/back
@@ -68,31 +62,7 @@ class DWA():
         action = np.zeros((11,))
         action[0] = action_l
         action[1] = action_a
-        action[10] = self.gripper
         self.robot.apply_action(action)
-
-    def grab(self):
-        self.gripper = -1
-        action = np.zeros((11,))
-        action[10] = self.gripper
-        self.robot.apply_action(action)
-        for i in range(10):
-            self.env.step(None)
-    
-    def release(self):
-        self.gripper = 1
-
-    # def test_ori(self, x, y, destination):
-    #     qx, qy, qz, qw = self.robot.get_orientation()
-    #     _, _, theta = quat2euler(qx, qy, qz, qw)
-    #     print(theta)
-    #     x_dist = destination[0] - x
-    #     y_dist = destination[1] - y
-    #     optimal_heading =  np.arctan2(y_dist, x_dist)
-    #     print(optimal_heading)
-    #     if optimal_heading < 0:
-    #         optimal_heading = 2 * math.pi + optimal_heading
-    #     print(optimal_heading)
 
     def get_dynamic_window_velocities(self, vl, vr):
         # Velocities that are limited by acceleration and min/max velocities
@@ -113,9 +83,9 @@ class DWA():
         selected_heading = None
         best_theta_predict = None
         best_benefit = -1000000
-        HEADING_WEIGHT = 5
-        OBSTACLE_WEIGHT = 90
-        VELOCITY_WEIGHT = 50
+        HEADING_WEIGHT = 10
+        OBSTACLE_WEIGHT = 100
+        VELOCITY_WEIGHT = 10
 
         for vl in vls:
             for vr in vrs:
@@ -138,27 +108,6 @@ class DWA():
         # print(selected_vl, selected_vr, best_benefit, degrees(best_theta_predict), degrees(theta))
         # print("-----------")
         return selected_vl, selected_vr
-
-
-    # def predict_position(self, x, y, theta, vl, vr):
-    #     vl = vl * self.WHEEL_RADIUS
-    #     vr = vr * self.WHEEL_RADIUS
-    #     t = self.dt * self.num_dt_to_predict
-    #     x_predict = None
-    #     y_predict = None
-    #     theta_predict = None
-    #     if (round(vl, 3) == round(vr, 3)):
-    #         x_predict = x + vl * t * math.cos(theta)
-    #         y_predict = y + vl * t * math.sin(theta)
-    #         theta_predict = theta
-    #     else:
-    #         R = self.WHEEL_AXLE_LENGTH / 2.0 * (vr + vl) / (vr - vl)
-    #         delta_theta = (vr - vl) * t / self.WHEEL_AXLE_LENGTH
-    #         # Need to review this
-    #         x_predict = x + R * (math.sin(delta_theta + theta) - math.sin(theta))
-    #         y_predict = y - R * (math.cos(delta_theta + theta) - math.cos(theta))
-    #         theta_predict = theta + delta_theta
-    #     return x_predict, y_predict, theta_predict
 
     def predict_positions(self, x, y, theta, vl, vr):
         vl = vl * self.WHEEL_RADIUS
@@ -197,21 +146,8 @@ class DWA():
         # print("####")
         return -1 * min(theta_1, theta_2)
 
-    # def obstacle_clearance_metric(self, x, y):
-    #     SAFE_DIST = 1.8
-    #     closest_distance = 100000
-    #     for robot in self.env.robots[1:]:
-    #         x_robot, y_robot, z_robot = robot.get_position()
-    #         distance =  math.dist([x,y], [x_robot, y_robot])
-    #         if distance < closest_distance:
-    #             closest_distance = distance
-    #     metric = SAFE_DIST - closest_distance
-    #     if metric < 0:
-    #         return 0.0
-    #     return -1 * metric
-
     def obstacle_clearance_metric(self, positions):
-        SAFE_DIST = 1.8
+        SAFE_DIST = 1.5
         closest_distance = 100000
         for pos_predict in positions:
             for robot in self.env.robots[1:]:

@@ -45,6 +45,17 @@ class Defenders():
             self.env.set_pos_orn_with_z_offset(defender, [rand_x, rand_y, 0])
             self.actions[i][0] = self.DEFAULT_SPEED
 
+    def move_defenders(self, x_range, y_range):
+        self.x_range = x_range
+        self.y_range = y_range
+        for idx, defender in enumerate(self.defenders):
+            rand_x = random.randrange(self.x_range[0], self.x_range[1])
+            rand_y = random.randrange(self.y_range[0], self.y_range[1])
+            # rand_x = 6
+            # rand_y = 0
+            self.env.set_pos_orn_with_z_offset(defender, [rand_x, rand_y, 0])
+            self.actions[idx][0] = self.DEFAULT_SPEED
+
     def step(self):
         for idx, d in enumerate(self.defenders):
             # x, y, z, w = d.get_orientation()
