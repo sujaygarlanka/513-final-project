@@ -164,7 +164,7 @@ class DWA():
         return -1 * math.dist([x_predict, y_predict], destination) 
 
     def calculate_action_from_wheel_vel(self, vl, vr):
-        a = (vr - vl) * self.WHEEL_RADIUS / (2 * self.WHEEL_AXLE_LENGTH / 2)
+        a = (vr - vl) * self.WHEEL_RADIUS / (-2 * self.WHEEL_AXLE_LENGTH / 2)
         l = self.WHEEL_RADIUS * (vl + vr) / 2
         action_a = a / self.MAX_ANG_VEL
         action_l = l / self.MAX_LIN_VEL
